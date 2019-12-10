@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 24
     defaultConfig {
-        applicationId "soxr.dyc.com.soxr"
+        applicationId "com.infomedia.yunbian.soxr"
         minSdkVersion 18
         targetSdkVersion 24
         versionCode 1

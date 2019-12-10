@@ -5,7 +5,7 @@
 #define LOG_TAG  "C_TAG"
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 JNIEXPORT void JNICALL
-Java_soxr_dyc_com_soxr_Testutil_excute(JNIEnv *env, jobject instance) {
+Java_com_infomedia_yunbian_soxr_Testutil_excute(JNIEnv *env, jobject instance) {
     const float in[] = {  /* Input: 12 cycles of a sine wave with freq. = irate/4 */
             0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1,
             0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1};
@@ -38,14 +38,14 @@ Java_soxr_dyc_com_soxr_Testutil_excute(JNIEnv *env, jobject instance) {
 }
 
 JNIEXPORT jint JNICALL
-Java_soxr_dyc_com_soxr_Testutil_resample(JNIEnv *env, jobject instance, jbyteArray b_,
-                                         jbyteArray ob_, jint src_size, jint dst_sample_value,
-                                         jint dest_channel) {
-//    jbyte *b = (*env)->GetByteArrayElements(env, b_, NULL);
-//    jbyte *ob = (*env)->GetByteArrayElements(env, ob_, NULL);
+Java_com_infomedia_yunbian_soxr_Testutil_resample(JNIEnv *env, jobject instance, jbyteArray b_,
+                                                  jbyteArray ob_, jint src_size,
+                                                  jint dst_sample_value, jint dest_channel) {
+    jbyte *b = (*env)->GetByteArrayElements(env, b_, NULL);
+    jbyte *ob = (*env)->GetByteArrayElements(env, ob_, NULL);
 
-    jbyte * b = malloc(96000/8*2*16);
-    jbyte *ob = malloc(44100*16*2+.5);
+//    jbyte * b = malloc(96000/8*2*16);
+//    jbyte *ob = malloc(44100*16/8*2);
     LOGD("获取到数据");
     soxr_error_t error;
     /* Create a stream resampler: */
@@ -58,7 +58,7 @@ Java_soxr_dyc_com_soxr_Testutil_resample(JNIEnv *env, jobject instance, jbyteArr
     size_t odone;/* Use configuration defaults.*/
     if (!error) {                         /* If all is well, run the resampler: */
         LOGD("准备处理实例");
-        error = soxr_process(soxr, b, src_size, NULL, ob, sizeof(ob), &odone);
+        error = soxr_process(soxr, b, sizeof(b), NULL, ob, sizeof(ob), &odone);
     }
     LOGD("释放资源");
     (*env)->ReleaseByteArrayElements(env, b_, b, 0);
@@ -68,8 +68,7 @@ Java_soxr_dyc_com_soxr_Testutil_resample(JNIEnv *env, jobject instance, jbyteArr
 }
 
 JNIEXPORT void JNICALL
-Java_soxr_dyc_com_soxr_Testutil_test(JNIEnv *env, jobject instance) {
-    double const irate = 96000.;
+Java_com_infomedia_yunbian_soxr_Testutil_test(JNIEnv *env, jobject instance) {    double const irate = 96000.;
     double const orate =  44100.;
 
     /* Allocate resampling input and output buffers in proportion to the input
