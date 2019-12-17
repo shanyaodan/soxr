@@ -6,14 +6,14 @@
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 JNIEXPORT void JNICALL
 Java_com_infomedia_yunbian_soxr_Testutil_excute(JNIEnv *env, jobject instance) {
-    const float in[] = {  /* Input: 12 cycles of a sine wave with freq. = irate/4 */
+    const jfloat in[] = {  /* Input: 12 cycles of a sine wave with freq. = irate/4 */
             0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1,
             0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1};
     double irate =  1;      /* Default to interpolation */
     double orate =  2;             /* by a factor of 2. */
 
     size_t olen = (size_t)(AL(in) * orate / irate + .5);   /* Assay output len. */
-    float * out = malloc(sizeof(*out) * olen);       /* Allocate output buffer. */
+    jfloat * out = malloc(sizeof(jfloat) * olen);       /* Allocate output buffer. */
     size_t odone;
 
     soxr_error_t error = soxr_oneshot(irate, orate, 1, /* Rates and # of chans. */
@@ -39,8 +39,9 @@ Java_com_infomedia_yunbian_soxr_Testutil_excute(JNIEnv *env, jobject instance) {
 
 JNIEXPORT jint JNICALL
 Java_com_infomedia_yunbian_soxr_Testutil_resample(JNIEnv *env, jobject instance, jbyteArray b_,
-                                                  jbyteArray ob_, jint src_size,
-                                                  jint dst_sample_value, jint dest_channel) {
+                                                  jbyteArray ob_, jint src_size, jint dest_size,
+                                                  jint src_sample_size, jint dst_sample_value,
+                                                  jint dest_channel) {
     jbyte *b = (*env)->GetByteArrayElements(env, b_, NULL);
     jbyte *ob = (*env)->GetByteArrayElements(env, ob_, NULL);
 
@@ -54,13 +55,18 @@ Java_com_infomedia_yunbian_soxr_Testutil_resample(JNIEnv *env, jobject instance,
             src_size, dst_sample_value, dest_channel,             /* Input rate, output rate, # of channels. */
             &error,                         /* To report any error during creation. */
             NULL, NULL, NULL);
-    LOGD("创建实例");
+    LOGD("创建实例error=%c",error);
     size_t odone;/* Use configuration defaults.*/
     if (!error) {                         /* If all is well, run the resampler: */
         LOGD("准备处理实例");
-        error = soxr_process(soxr, b, sizeof(b), NULL, ob, sizeof(ob), &odone);
+        error = soxr_process(soxr, b, 24*2* sizeof(jbyte), NULL, ob, 24*2*2* sizeof(jbyte), &odone);
     }
-    LOGD("释放资源");
+    for(int i=0;i<19;i++){
+        LOGD("结果=%i",ob[i]);
+
+    }
+
+    LOGD("释放资源 error=%c",error);
     (*env)->ReleaseByteArrayElements(env, b_, b, 0);
     (*env)->ReleaseByteArrayElements(env, ob_, ob, 0);
     soxr_delete(soxr);
@@ -73,7 +79,8 @@ Java_com_infomedia_yunbian_soxr_Testutil_test(JNIEnv *env, jobject instance) {  
 
     /* Allocate resampling input and output buffers in proportion to the input
      * and output rates: */
-#define buf_total_len 15000  /* In samples. */
+#define buf_total_len 15000  /* In samples
+ * . */
     size_t const olen = (size_t)(orate * buf_total_len / (irate + orate) + .5);
     size_t const ilen = buf_total_len - olen;
     size_t const osize = sizeof(float), isize = osize;
@@ -125,4 +132,101 @@ Java_com_infomedia_yunbian_soxr_Testutil_test(JNIEnv *env, jobject instance) {  
     LOGD("释放资源");
 
 
+}
+
+//JNIEXPORT jint JNICALL
+//Java_com_infomedia_yunbian_soxr_Testutil_resample2(JNIEnv *env, jobject instance, jfloatArray b_,
+//                                                   jfloatArray ob_, jint src_sample_size,
+//                                                   jint dst_sample_value, jint dest_channel) {
+//    jfloat *b = (*env)->GetFloatArrayElements(env, b_, NULL);
+//    jfloat *out = (*env)->GetFloatArrayElements(env, ob_, NULL);
+//
+//    const jfloat b1[] = {  /* Input: 12 cycles of a sine wave with freq. = irate/4 */
+//            0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1,
+//            0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1};
+//    double irate =  1;      /* Default to interpolation */
+//    double orate =  2;             /* by a factor of 2. */
+//
+//    size_t olen = (size_t)(AL(b1) * orate / irate + .5);   /* Assay output len. */
+////    jfloat * out = malloc(sizeof(jfloat) * olen);       /* Allocate output buffer. */
+////    size_t odone;
+//    LOGD("获取到数据A%i",olen);
+//    LOGD("获取到数据B%i",AL(&b));
+//
+//
+//    LOGD("获取到数据");
+//    soxr_error_t error;
+//    /* Create a stream resampler: */
+//    LOGD("创建实例前");
+//    soxr_t soxr = soxr_create(
+//            src_sample_size, dst_sample_value, dest_channel,             /* Input rate, output rate, # of channels. */
+//            &error,                         /* To report any error during creation. */
+//            NULL, NULL, NULL);
+//    LOGD("创建实例error=%c",error);
+//    size_t odone;/* Use configuration defaults.*/
+//    if (!error) {                         /* If all is well, run the resampler: */
+//        LOGD("准备处理实例");
+//        error = soxr_process(soxr, b, ~AL(b1), NULL, out,AL(b1)*2, &odone);
+//    }
+//    LOGD("结果%i", odone);
+//    unsigned i = 0;                            /* Print out the resampled data, */
+//    while (i++ < odone){
+//        printf("%5.2f%c", out[i-1], " \n"[!(i&7) || i == odone]);
+//        LOGD("5.2f%f", out[i-1]);
+//        // LOGD("\n%c"[!(i&7) || i == odone]);
+//    }
+//
+//    LOGD("释放资源 error=%c",error);
+//
+//    (*env)->ReleaseFloatArrayElements(env, b_, b, 0);
+//    (*env)->ReleaseFloatArrayElements(env, ob_, out, 0);
+//    return odone;
+//}
+
+JNIEXPORT jint JNICALL
+Java_com_infomedia_yunbian_soxr_Testutil_resample2(JNIEnv *env, jobject instance, jbyteArray b_,
+                                                   jbyteArray ob_, jint src_sample_size,
+                                                   jint dst_sample_value, jint dest_channel) {
+    jbyte *b = (*env)->GetByteArrayElements(env, b_, NULL);
+    jbyte *out = (*env)->GetByteArrayElements(env, ob_, NULL);
+    const jfloat b1[] = {  /* Input: 12 cycles of a sine wave with freq. = irate/4 */
+            0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1,
+            0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1, 0,1,0,-1};
+    double irate =  1;      /* Default to interpolation */
+    double orate =  2;             /* by a factor of 2. */
+
+    size_t olen = (size_t)(AL(b) * orate / irate + .5);   /* Assay output len. */
+//    jfloat * out = malloc(sizeof(jfloat) * olen);       /* Allocate output buffer. */
+//    size_t odone;
+    LOGD("获取到数据A%i",olen);
+    LOGD("获取到数据B%i",AL(&b));
+
+
+    LOGD("获取到数据");
+    soxr_error_t error;
+    /* Create a stream resampler: */
+    LOGD("创建实例前");
+    soxr_t soxr = soxr_create(
+            src_sample_size, dst_sample_value, dest_channel,             /* Input rate, output rate, # of channels. */
+            &error,                         /* To report any error during creation. */
+            NULL, NULL, NULL);
+    LOGD("创建实例error=%c",error);
+    size_t odone;/* Use configuration defaults.*/
+    if (!error) {                         /* If all is well, run the resampler: */
+        LOGD("准备处理实例");
+        error = soxr_process(soxr, b, ~AL(b1), NULL, out,AL(b1)*2, &odone);
+    }
+    LOGD("结果%i", odone);
+    unsigned i = 0;                            /* Print out the resampled data, */
+    while (i++ < odone){
+        printf("%5.2f%c", out[i-1], " \n"[!(i&7) || i == odone]);
+        LOGD("5.2f%f", out[i-1]);
+        // LOGD("\n%c"[!(i&7) || i == odone]);
+    }
+
+    LOGD("释放资源 error=%c",error);
+
+    (*env)->ReleaseByteArrayElements(env, b_, b, 0);
+    (*env)->ReleaseByteArrayElements(env, ob_, out, 0);
+    return odone;
 }
